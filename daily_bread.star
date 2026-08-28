@@ -74,7 +74,10 @@ def main(config):
     content = "  " + message + "  •  " + reference + "  "
 
     return render.Root(
-        delay = 65,
+        # A complete marquee is 231 frames for the longest entry. At 50 ms,
+        # it finishes in about 11.6 seconds, leaving margin in a 15-second
+        # Tidbyt rotation slot.
+        delay = 50,
         max_age = _seconds_until_midnight(now),
         child = render.Stack(
             children = [
