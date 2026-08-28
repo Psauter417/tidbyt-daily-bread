@@ -1,0 +1,48 @@
+name: Refresh Daily Bread
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "2 5,6 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/Chicago
+    steps:
+      - name: Check local midnight
+        id: midnight
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "$(date +%H)" == "00" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out app
+        if: steps.midnight.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - name: Install Pixlet
+        if: steps.midnight.outputs.run == 'true'
+        run: |
+          curl -fsSLo pixlet.tar.gz https://github.com/tidbyt/pixlet/releases/download/v0.34.0/pixlet_0.34.0_linux_amd64.tar.gz
+          tar -xzf pixlet.tar.gz
+          chmod +x pixlet
+
+      - name: Render daily message
+        if: steps.midnight.outputs.run == 'true'
+        run: |
+          ./pixlet render daily_bread.star 'location={"lat":36.6437,"lng":-93.2185,"locality":"Branson","timezone":"America/Chicago"}'
+
+      - name: Push to Tidbyt
+        if: steps.midnight.outputs.run == 'true'
+        env:
+          TIDBYT_API_TOKEN: ${{ secrets.TIDBYT_API_TOKEN }}
+          TIDBYT_DEVICE_ID: ${{ secrets.TIDBYT_DEVICE_ID }}
+        run: |
+          ./pixlet push --background --api-token "$TIDBYT_API_TOKEN" --installation-id dailybread "$TIDBYT_DEVICE_ID" daily_bread.webp
