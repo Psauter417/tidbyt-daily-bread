@@ -3,10 +3,11 @@ name: Refresh Daily Bread
 on:
   workflow_dispatch:
   schedule:
-    # Run on both possible Central-Time midnight hours. Scheduled workflows
-    # may start late, so every invocation refreshes instead of checking that
-    # the runner still happens to be in the 12 AM hour.
-    - cron: "17 5,6 * * *"
+    # GitHub scheduled today's midnight refresh more than five hours late.
+    # Refresh hourly so a delayed runner cannot leave yesterday's image on
+    # the device all morning. Rendering is keyed to America/Chicago, so every
+    # run within a local day produces the same message and date.
+    - cron: "17 * * * *"
 
 permissions:
   contents: read
